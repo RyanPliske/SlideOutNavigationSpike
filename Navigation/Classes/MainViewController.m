@@ -20,10 +20,9 @@
 @interface MainViewController () <CenterViewControllerDelegate, UIGestureRecognizerDelegate>
 
 @property (nonatomic) CenterViewController *centerViewController;
-@property (nonatomic) LeftPanelViewController * leftPanelViewController;
-@property (nonatomic, assign) BOOL showingLeftPanel;
-@property (nonatomic, assign) BOOL showPanel;
-@property (nonatomic, assign) CGPoint preVelocity;
+@property (nonatomic) LeftPanelViewController *leftPanelViewController;
+@property (nonatomic, unsafe_unretained) BOOL showingLeftPanel;
+@property (nonatomic, unsafe_unretained) BOOL showPanel;
 
 @end
 
@@ -182,7 +181,6 @@
             // Allow dragging only in x-coordinate by only updating the x coordinate of the recognizer
             [sender view].center = CGPointMake([sender view].center.x + translatedPoint.x, [sender view].center.y);
             [panRecognizer setTranslation:CGPointMake(0, 0) inView:self.view];
-            self.preVelocity = velocity;
             break;
         default:
             break;
