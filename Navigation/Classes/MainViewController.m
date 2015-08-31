@@ -17,11 +17,13 @@
 #define SLIDE_TIMING .25
 #define PANEL_WIDTH 60
 
-@interface MainViewController () <CenterViewControllerDelegate>
+@interface MainViewController () <CenterViewControllerDelegate, UIGestureRecognizerDelegate>
 
 @property (nonatomic) CenterViewController *centerViewController;
 @property (nonatomic) LeftPanelViewController * leftPanelViewController;
 @property (nonatomic, assign) BOOL showingLeftPanel;
+@property (nonatomic, assign) BOOL showPanel;
+@property (nonatomic, assign) CGPoint preVelocity;
 
 @end
 
@@ -39,7 +41,7 @@
     
     [self.view addSubview:self.centerViewController.view];
     [self addChildViewController:self.centerViewController];
-    [self.centerViewController didMoveToParentViewController:self];
+    [self setupGestures];
 }
 
 - (void)viewDidUnload
@@ -111,7 +113,6 @@
         [self.view addSubview:self.leftPanelViewController.view];
         
         [self addChildViewController:self.leftPanelViewController];
-        [self.leftPanelViewController didMoveToParentViewController:self];
         self.leftPanelViewController.view.frame = CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height);
     }
     self.showingLeftPanel = YES;
@@ -135,10 +136,52 @@
 
 - (void)setupGestures
 {
+    UIPanGestureRecognizer *panRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(movePanel:)];
+    [panRecognizer setMinimumNumberOfTouches:1];
+    [panRecognizer setMaximumNumberOfTouches:1];
+    [panRecognizer setDelegate:self];
+    
+    [self.centerViewController.view addGestureRecognizer:panRecognizer];
 }
 
 -(void)movePanel:(id)sender
 {
+    UITapGestureRecognizer *tapRecognizer = (UITapGestureRecognizer*)sender;
+    [tapRecognizer.view.layer removeAllAnimations];
+    
+    UIPanGestureRecognizer *panRecognizer = (UIPanGestureRecognizer*)sender;
+    CGPoint translatedPoint = [panRecognizer translationInView:self.view];
+    CGPoint velocity = [panRecognizer velocityInView:[sender view]];
+    
+    switch ([panRecognizer state]) {
+            
+        case UIGestureRecognizerStateBegan:
+        {
+            UIView *childView = [self getLeftView];
+            [self.view sendSubviewToBack:childView];
+            [[sender view] bringSubviewToFront:panRecognizer.view];
+        }
+            break;
+            
+        case UIGestureRecognizerStateEnded:
+            if (self.showPanel) {
+                [self movePanelRight];
+            } else {
+                [self movePanelToOriginalPosition];
+            }
+            break;
+            
+        case UIGestureRecognizerStateChanged:
+            // Show or Hide panel according to midwawy point of the screen
+            self.showPanel = fabs([sender view].center.x - self.centerViewController.view.frame.size.width/2) > self.centerViewController.view.frame.size.width/2;
+            // Allow dragging only in x-coordinate by only updating the x coordinate of the recognizer
+            [sender view].center = CGPointMake([sender view].center.x + translatedPoint.x, [sender view].center.y);
+            [panRecognizer setTranslation:CGPointMake(0, 0) inView:self.view];
+            self.preVelocity = velocity;
+            break;
+        default:
+            break;
+    }
 }
 
 #pragma mark -
