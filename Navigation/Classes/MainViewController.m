@@ -115,7 +115,6 @@
         [self addChildViewController:self.leftPanelViewController];
         self.leftPanelViewController.view.frame = CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height);
     }
-    self.showingLeftPanel = YES;
     
     [self showCenterViewWithShadow:YES withOffset:-2];
     
@@ -152,6 +151,12 @@
     UIPanGestureRecognizer *panRecognizer = (UIPanGestureRecognizer*)sender;
     CGPoint translatedPoint = [panRecognizer translationInView:self.view];
     CGPoint velocity = [panRecognizer velocityInView:[sender view]];
+    
+    if (self.showingLeftPanel && velocity.x > 0) {
+        return;
+    } else if (!self.showingLeftPanel && velocity.x < 0) {
+        return;
+    }
     
     switch ([panRecognizer state]) {
             
@@ -202,6 +207,7 @@
     completion:^(BOOL finished) {
         if (finished) {
             self.centerViewController.leftButton.tag = 0;
+            self.showingLeftPanel = YES;
         }
     }];
 }
